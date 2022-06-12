@@ -12,38 +12,43 @@ def init(width, height):
 
 def update(array, width, height, key):
     global paddle_length
-    global paddle_x
+    global paddle_y
     for i in range(width):
         for j in range(height):
             if array[i][j] == 1: # paddle movement
                 if key == 'w':
-                    for c in range(paddle_length):
+                    paddle_y = (paddle_y - 1) if paddle_y > 0 else 0
+                    for c in range(i, (i+paddle_length)%width):
                         array[c][j+j] = 0
+                    for c in range(i, (i+paddle_length)%width):
+                        array[(c-paddle_y)%width][j] = 1
+                    return array
                 elif key == 's':
-                    paddle_x += 1
-                    for c in range(j, paddle_length):
+                    paddle_y = (paddle_y + 1) if paddle_y < height-paddle_length else height-paddle_length
+                    for c in range(i, (i+paddle_length)%width):
                         array[c][j+j] = 0
-                    for c in range(j, paddle_length):
-                        array[(c+paddle_x)%width][(j+j)%height] = 1
+                    for c in range(i, (i+paddle_length)%width):
+                        array[(c+paddle_y)%width][j] = 1
                     return array
     return array
 
-def draw(array, width, height):
+def draw(array, width, height, symbol):
     print("\033[2J")
     for i in range(width):
         for j in range(height):
-            print(array[i][j], end='')
+            if array[i][j] == 1:
+                print(symbol, end='')
         print()
 
 resolution_x = 15
 resolution_y = 50
 paddle_length = resolution_y//10
-paddle_x = 0
+paddle_y = 0
 display = init(resolution_x, resolution_y)
 
 c = ""
 while (c != 'q'):
-    draw(display, resolution_x, resolution_y)
+    draw(display, resolution_x, resolution_y, "*")
     c = rc.readkey()
     display = update(display, resolution_x, resolution_y, c)
     sleep(0.1)
