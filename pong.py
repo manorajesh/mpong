@@ -1,27 +1,27 @@
 import readchar as rc
 from time import sleep
+from random import randint
 
 def init(height, width):
     global paddle_length
     array = []
     for i in range(height):
-        array.append([1 if i < paddle_length else 0])
+        array.append([1 if i < paddle_length else 0]) # left paddle
         for j in range(width):
             array[i].append(0)
 
-    for i in range(height):
+    for i in range(height): # divider
         array[i][width//2] = 2
 
-    for c in range(paddle_length):
+    for c in range(paddle_length): # right paddle
         array[c][width-1] = 1
-    return array
 
-def clamp(n, minn, maxn):
-    return max(min(maxn, n), minn)
+    array[0][width//2] = 3 # ball    
+
+    return array
 
 def update(array, height, width, key):
     global paddle_length
-    global paddle_y
     for i in range(height):
         for j in range(width):
             if array[i][j] == 1: # paddle movement
@@ -47,6 +47,9 @@ def update(array, height, width, key):
                     return array
     return array
 
+def update_ball(array, width, height):
+    pass
+
 def draw(array, width, height, symbol):
     print("\033c")
     for i in range(width):
@@ -61,7 +64,6 @@ try:
     resolution_x = 15
     resolution_y = 50
     paddle_length = resolution_y//10
-    paddle_y = 0
     display = init(resolution_x, resolution_y)
 
     c = ""
