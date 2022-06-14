@@ -2,7 +2,7 @@ import readchar as rc
 from time import sleep
 from random import randint
 from threading import Thread
-import hashlib
+import sys
 
 def init(height, width):
     global paddle_length
@@ -49,10 +49,14 @@ def update(height, width, key):
 def opposite(number):
     return -number
 
-def update_ball(height, width):
+def update_ball(height, width, ball_wait=1):
     global display
     global direction_y
     global direction_x
+    global counter
+
+    if counter % ball_wait != 0:
+        return
 
     for i in range(height):
         for j in range(width):
@@ -68,10 +72,10 @@ def update_ball(height, width):
                     display[i+direction_y][j+direction_x] = 3
                     return
                 elif j+direction_x == width:
-                    restart(left=score_left+1, right=score_right)
+                    restart()
                     return
                 elif j+direction_x == -1:
-                    restart(left=score_left, right=score_right+1)
+                    restart()
                     return
                 elif display[i+direction_y][j+direction_x] == 1:
                     display[i][j] = 0
@@ -101,34 +105,28 @@ def get_input():
         key = rc.readkey()
 
 def print_scores(width):
-    global score_left
-    global score_right
+    global score
+    print(("Score: " + str(score)).center(width), end="\r")
 
-    print(" " * (width//4) + str(score_left) + " " * (width//2) + str(score_right), end="\r")
-
-def restart(left, right):
-    global score_left
-    global score_right
+def restart():
+    global score
     global display
 
-    score_left = left
-    score_right = right
+    score += 1
     display = init(resolution_x, resolution_y)
     
-
-
 ###############################################################################
 
 resolution_x = 15
 resolution_y = 50
 paddle_length = resolution_y//10
 display = init(resolution_x, resolution_y)
-key = 0
+key = ""
 thread_flag = True
 direction_x = -1 # -1 = left, 1 = right
 direction_y = -1 # -1 = down, 1 = up
-score_right = 0
-score_left = 0
+score = 0
+counter = 0
 
 def main():
     global resolution_x
@@ -137,24 +135,23 @@ def main():
     global display
     global key
     global thread_flag
+    global counter
 
     p = Thread(target=get_input, args=())
 
     p.start()
-    counter = 0 
     while (key != 'q'):
         draw(resolution_x, resolution_y, '*')
         update(resolution_x, resolution_y, key)
         key = ""
-        update_ball(resolution_x, resolution_y)
+        update_ball(resolution_x, resolution_y, ball_wait=1)
         print_scores(resolution_y)
-        print("frame %s" % counter)
         counter += 1
-        sleep(0.3)
+        sleep(0.1)
 
     thread_flag = False
     p.join()
-    print('\033[?25h', end="") # show cursor
+    sys.exit()
 
 if __name__ == '__main__':
     main()
