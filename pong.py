@@ -19,12 +19,12 @@ def init(height, width):
 
     return array
 
-def update(height, width, key):
+def update_paddle(height, width, key):
     global paddle_length
     global display
     for i in range(height):
         for j in range(width):
-            if display[i][j] == 1: # paddle movement
+            if display[i][j] == 1:
                 if key == 'w':
                     if i == 0:
                         continue                    
@@ -55,7 +55,7 @@ def update_ball(height, width, ball_wait=1):
     global direction_x
     global counter
 
-    if counter % ball_wait != 0:
+    if counter % ball_wait != 0: # waiting for frame
         return
 
     for i in range(height):
@@ -86,6 +86,8 @@ def update_ball(height, width, ball_wait=1):
                     display[i][j] = 0
                     display[i+direction_y][j+direction_x] = 3
                     return
+    
+    restart() # ball out of bounds
 
 def draw(width, height, symbol):
     print("\033c")
@@ -115,7 +117,7 @@ def restart():
     score += 1
     display = init(resolution_x, resolution_y)
     
-###############################################################################
+####################### Main #######################
 
 resolution_x = 15
 resolution_y = 50
@@ -142,7 +144,7 @@ def main():
     p.start()
     while (key != 'q'):
         draw(resolution_x, resolution_y, '*')
-        update(resolution_x, resolution_y, key)
+        update_paddle(resolution_x, resolution_y, key)
         key = ""
         update_ball(resolution_x, resolution_y, ball_wait=1)
         print_scores(resolution_y)
