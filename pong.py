@@ -3,6 +3,8 @@ from time import sleep
 from random import randint
 from threading import Thread
 import hashlib
+import sys
+import tty
 
 def init(height, width):
     global paddle_length
@@ -49,10 +51,14 @@ def update(height, width, key):
 def opposite(number):
     return -number
 
-def update_ball(height, width):
+def update_ball(height, width, ball_wait=1):
     global display
     global direction_y
     global direction_x
+    global counter
+
+    if counter % ball_wait != 0:
+        return
 
     for i in range(height):
         for j in range(width):
@@ -68,10 +74,10 @@ def update_ball(height, width):
                     display[i+direction_y][j+direction_x] = 3
                     return
                 elif j+direction_x == width:
-                    restart(left=score_left+1, right=score_right)
+                    restart()
                     return
                 elif j+direction_x == -1:
-                    restart(left=score_left, right=score_right+1)
+                    restart()
                     return
                 elif display[i+direction_y][j+direction_x] == 1:
                     display[i][j] = 0
@@ -100,35 +106,73 @@ def get_input():
     while thread_flag:
         key = rc.readkey()
 
+# To remove the high scores file,
+# search for the .scores file.
+# It is hidden as denoted with
+# the dot at the start.  
+
+def saving_highscore(score):
+    try:
+        file = open(".scores", "r")
+    except FileNotFoundError:
+        file = file = open(".scores", "w+")
+
+    tty.setcbreak(sys.stdin)
+
+    try:
+        if int(file.read().split()[0]) < score:
+            print("\nNew Highscore!")
+            file = open(".scores", "w")
+            file.write(str(score) + "\n" + str(hashlib.sha256(str(score).encode()).hexdigest()))
+    except (ValueError, IndexError):
+        usrInput = input("Create new .scores file? Will delete file in this directory named that (Y/n) ")
+        if usrInput == "" or "Y" or "y":
+            file = open(".scores", "w")
+            file.write(str(score) + "\n" + str(hashlib.sha256(str(score).encode()).hexdigest()))
+        elif usrInput == "n" or "N":
+            print("File not created")
+        else:
+            file = open(".scores", "w")
+            file.write(str(score) + "\n" + str(hashlib.sha256(str(score).encode()).hexdigest()))
+    file.close()
+    exit()
+
 def print_scores(width):
-    global score_left
-    global score_right
+    global score
+    global thread_flag
 
-    print(" " * (width//4) + str(score_left) + " " * (width//2) + str(score_right), end="\r")
+    ## High score managing
+    try:
+        file = open(".scores", "r")
+        high_score, hash = file.read().split()
+        if hash != hashlib.sha256(str(high_score).encode()).hexdigest(): # basic anti-cheat
+            print("This .scores file is not valid. Don't cheat\n\rDelete it and restart the game")
+            thread_flag = False
+            exit()
+    except (ValueError, FileNotFoundError):
+        high_score = "0"
 
-def restart(left, right):
-    global score_left
-    global score_right
+    print(("Score: " + str(score) + " " * (width//4) + "Highscore: " + high_score).center(width), end="\r")
+
+def restart():
+    global score
     global display
 
-    score_left = left
-    score_right = right
+    score += 1
     display = init(resolution_x, resolution_y)
     
-
-
 ###############################################################################
 
 resolution_x = 15
 resolution_y = 50
 paddle_length = resolution_y//10
 display = init(resolution_x, resolution_y)
-key = 0
+key = ""
 thread_flag = True
 direction_x = -1 # -1 = left, 1 = right
 direction_y = -1 # -1 = down, 1 = up
-score_right = 0
-score_left = 0
+score = 0
+counter = 0
 
 def main():
     global resolution_x
@@ -137,24 +181,24 @@ def main():
     global display
     global key
     global thread_flag
+    global counter
 
     p = Thread(target=get_input, args=())
 
     p.start()
-    counter = 0 
     while (key != 'q'):
         draw(resolution_x, resolution_y, '*')
         update(resolution_x, resolution_y, key)
         key = ""
-        update_ball(resolution_x, resolution_y)
+        update_ball(resolution_x, resolution_y, ball_wait=1)
         print_scores(resolution_y)
-        print("frame %s" % counter)
         counter += 1
-        sleep(0.3)
+        sleep(0.1)
 
     thread_flag = False
     p.join()
-    print('\033[?25h', end="") # show cursor
+    # saving_highscore(score) # commented because it's buggy
+    sys.exit()
 
 if __name__ == '__main__':
     main()
