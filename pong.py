@@ -1,54 +1,76 @@
 import readchar as rc
 from time import sleep
 
-def init(width, height):
+def init(height, width):
     global paddle_length
     array = []
-    for i in range(width):
+    for i in range(height):
         array.append([1 if i < paddle_length else 0])
-        for j in range(height):
+        for j in range(width):
             array[i].append(0)
+
+    for i in range(height):
+        array[i][width//2] = 2
+
+    for c in range(paddle_length):
+        array[c][width-1] = 1
     return array
 
-def update(array, width, height, key):
+def clamp(n, minn, maxn):
+    return max(min(maxn, n), minn)
+
+def update(array, height, width, key):
     global paddle_length
     global paddle_y
-    for i in range(width):
-        for j in range(height):
+    for i in range(height):
+        for j in range(width):
             if array[i][j] == 1: # paddle movement
                 if key == 'w':
-                    paddle_y = (paddle_y - 1) if paddle_y > 0 else 0
-                    for c in range(i, (i+paddle_length)%width):
-                        array[c][j+j] = 0
-                    for c in range(i, (i+paddle_length)%width):
-                        array[(c-paddle_y)%width][j] = 1
+                    if i == 0:
+                        continue                    
+                    for c in range(i, (i+paddle_length)):
+                        array[c][j] = 0
+                        array[c][width-1] = 0
+                    for c in range(i, (i+paddle_length)):
+                        array[c-1][j] = 1
+                        array[c-1][width-1] = 1
                     return array
                 elif key == 's':
-                    paddle_y = (paddle_y + 1) if paddle_y < height-paddle_length else height-paddle_length
-                    for c in range(i, (i+paddle_length)%width):
-                        array[c][j+j] = 0
-                    for c in range(i, (i+paddle_length)%width):
-                        array[(c+paddle_y)%width][j] = 1
+                    if i == height+1-paddle_length:
+                        continue
+                    for c in range(i, (i+paddle_length)%height):
+                        array[c][j] = 0
+                        array[c][width-1] = 0
+                    for c in range(i, (i+paddle_length)%height):
+                        array[c+1][j] = 1
+                        array[c+1][width-1] = 1
                     return array
     return array
 
 def draw(array, width, height, symbol):
-    print("\033[2J")
+    print("\033c")
     for i in range(width):
         for j in range(height):
-            if array[i][j] == 1:
+            if array[i][j] != 0:
                 print(symbol, end='')
+            else:
+                print(' ', end='')
         print()
 
-resolution_x = 15
-resolution_y = 50
-paddle_length = resolution_y//10
-paddle_y = 0
-display = init(resolution_x, resolution_y)
+try:
+    resolution_x = 15
+    resolution_y = 50
+    paddle_length = resolution_y//10
+    paddle_y = 0
+    display = init(resolution_x, resolution_y)
 
-c = ""
-while (c != 'q'):
-    draw(display, resolution_x, resolution_y, "*")
-    c = rc.readkey()
-    display = update(display, resolution_x, resolution_y, c)
-    sleep(0.1)
+    c = ""
+    while (c != 'q'):
+        print('\033[?25l', end="") # remove cursor
+        draw(display, resolution_x, resolution_y, "*")
+        c = rc.readkey()
+        display = update(display, resolution_x, resolution_y, c)
+        sleep(0.1)
+except KeyboardInterrupt:
+    pass
+print('\033[?25h', end="") # show cursor
