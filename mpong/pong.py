@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import readchar as rc
 from time import sleep
 from random import randint, sample
